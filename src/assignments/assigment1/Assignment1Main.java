@@ -19,6 +19,15 @@
 package assignments.assigment1;
 
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.text.MessageFormat;
+
 /**
  * Part1: 
 Using TCP sockets, write a riddle server that return riddles. ( You can find riddles from http://www.hobbitcentral.com/lore/riddles.php). The server should do following. 
@@ -39,9 +48,45 @@ Do the same using UDP sockets.
  */
 
 public class Assignment1Main {
-	
-	public void setup(){
-		//Start your server here 
+
+    private static final int TCP_PORT = 8081;
+    private static final int UDP_PORT = 8082;
+
+    private ServerSocket serverSocket;
+    private DatagramSocket datagramSocket;
+
+    private Socket clientSocketConnection;
+    private DataOutputStream dataOutputStream;
+    private BufferedReader bufferedReader;
+
+    public void setup(){
+		//Start your server here
+
+        //TCP Server
+        try {
+            serverSocket = new ServerSocket(TCP_PORT);
+            System.out.println(MessageFormat.format("[INFO] Riddle TCP Server running on {0}", TCP_PORT));
+            int clientCount = 1;
+            while (true) {
+                System.out.println("[TCP RIDDLE SERVER] Waiting for request....");
+                Socket socket = serverSocket.accept();
+                String threadName = "T-Client-"+clientCount;
+                new Thread(new SocketThread(socket),threadName).start();
+                clientCount++;
+            }
+        } catch (IOException e) {
+            System.out.println(MessageFormat.format("[ERROR] Setting up Riddle TCP Server on {0} : {1}", TCP_PORT, e.getMessage()));
+        }
+
+        //UDP Server
+        try {
+            datagramSocket = new DatagramSocket(UDP_PORT);
+            System.out.println(MessageFormat.format("[INFO] Riddle UDP Server running on {0}", UDP_PORT));
+
+            //listen here
+        } catch (IOException e) {
+            System.out.println(MessageFormat.format("[ERROR] Setting up Riddle UDP Server on {0} : {1}", UDP_PORT, e.getMessage()));
+        }
 	}
 	
 	/**
@@ -51,7 +96,21 @@ public class Assignment1Main {
 	 */
 	public String[] runCommandOnTcpEchoServer(String command){
 		//Send the message to the server and get a result
-		return null;
+        String serverResponse=null;
+        try {
+            if(clientSocketConnection==null){
+                clientSocketConnection = new Socket("localhost",TCP_PORT);
+                dataOutputStream = new DataOutputStream(clientSocketConnection.getOutputStream());
+                bufferedReader = new BufferedReader(new InputStreamReader(clientSocketConnection.getInputStream()));
+            }
+            dataOutputStream.writeBytes(command+"\n");
+            dataOutputStream.flush();
+            serverResponse = bufferedReader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new String[]{serverResponse};
 	}
 	
 	/**
@@ -66,7 +125,21 @@ public class Assignment1Main {
 
 	
 	public void shutdown(){
-		//shitdown the server here
-	}
+		//shutdown the server here
 
+        //shutdown TCP socket
+        try {
+            if (serverSocket != null) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            System.out.println(MessageFormat.format("[ERROR] Shutting down Riddle TCP server running on {0} : {1}", TCP_PORT, e.getMessage()));
+        }
+
+        //shutdown UDP socket
+        if (datagramSocket != null) {
+            datagramSocket.close();
+        }
+
+    }
 }
