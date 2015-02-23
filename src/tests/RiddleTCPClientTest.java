@@ -5,12 +5,11 @@ import assignments.assigment1.Assignment1Main;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.Socket;
 
 /**
  * Created by asankanissanka on 2/22/15.
  */
-public class RiddleClientTest {
+public class RiddleTCPClientTest {
     public static void main(String[] args) {
         Assignment1Main assignment1Main = new Assignment1Main();
         while(true){
@@ -21,7 +20,9 @@ public class RiddleClientTest {
                 if(userInput!=null && userInput.trim()!=""){
                     response = assignment1Main.runCommandOnTcpEchoServer(userInput);
                 }
-                System.out.println("Response : "+response[0]);
+                for(int i=0;i<response.length;i++){
+                    System.out.println(response[i]);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }

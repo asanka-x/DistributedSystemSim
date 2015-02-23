@@ -23,9 +23,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.DatagramSocket;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.text.MessageFormat;
 
 /**
@@ -62,31 +60,46 @@ public class Assignment1Main {
     public void setup(){
 		//Start your server here
 
-        //TCP Server
-        try {
-            serverSocket = new ServerSocket(TCP_PORT);
-            System.out.println(MessageFormat.format("[INFO] Riddle TCP Server running on {0}", TCP_PORT));
-            int clientCount = 1;
-            while (true) {
-                System.out.println("[TCP RIDDLE SERVER] Waiting for request....");
-                Socket socket = serverSocket.accept();
-                String threadName = "T-Client-"+clientCount;
-                new Thread(new SocketThread(socket),threadName).start();
-                clientCount++;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //TCP Server
+                try {
+                    serverSocket = new ServerSocket(TCP_PORT);
+                    System.out.println(MessageFormat.format("[INFO] Riddle TCP Server running on {0}", TCP_PORT));
+                    int tcpClientCount = 1;
+                    while (true) {
+                        System.out.println("[TCP RIDDLE SERVER] Waiting for request....");
+                        Socket socket = serverSocket.accept();
+                        String threadName = "T-Client-"+tcpClientCount;
+                        new Thread(new TCPSocketThread(socket),threadName).start();
+                        tcpClientCount++;
+                    }
+                } catch (IOException e) {
+                    System.out.println(MessageFormat.format("[ERROR] Setting up Riddle TCP Server on {0} : {1}", TCP_PORT, e.getMessage()));
+                }
             }
-        } catch (IOException e) {
-            System.out.println(MessageFormat.format("[ERROR] Setting up Riddle TCP Server on {0} : {1}", TCP_PORT, e.getMessage()));
-        }
+        }).start();
 
-        //UDP Server
-        try {
-            datagramSocket = new DatagramSocket(UDP_PORT);
-            System.out.println(MessageFormat.format("[INFO] Riddle UDP Server running on {0}", UDP_PORT));
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //UDP Server
+                try {
+                    datagramSocket = new DatagramSocket(UDP_PORT);
+                    System.out.println(MessageFormat.format("[INFO] Riddle UDP Server running on {0}", UDP_PORT));
+                    UDPSocket udpSocket = new UDPSocket(datagramSocket);
+                    while(true){
+                        System.out.println("[UDP RIDDLE SERVER] Waiting for request....");
+                        udpSocket.start();
+                    }
 
-            //listen here
-        } catch (IOException e) {
-            System.out.println(MessageFormat.format("[ERROR] Setting up Riddle UDP Server on {0} : {1}", UDP_PORT, e.getMessage()));
-        }
+                    //listen here
+                } catch (IOException e) {
+                    System.out.println(MessageFormat.format("[ERROR] Setting up Riddle UDP Server on {0} : {1}", UDP_PORT, e.getMessage()));
+                }
+            }
+        }).start();
 	}
 	
 	/**
@@ -109,8 +122,10 @@ public class Assignment1Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        serverResponse = serverResponse.replaceAll("^#+", "");
+        serverResponse = serverResponse.replaceAll("#+$", "");
 
-        return new String[]{serverResponse};
+        return serverResponse.split("#");
 	}
 	
 	/**
@@ -120,7 +135,25 @@ public class Assignment1Main {
 	 */
 	public String[] runCommandOnUdpEchoServer(String command){
 		//Send the message to the server and get a result
-		return null;
+        String serverResponse=null;
+        try {
+            DatagramSocket clientDatagramSocket = new DatagramSocket();
+            InetAddress inetAddress = InetAddress.getByName("localhost");
+            DatagramPacket sendPacket = new DatagramPacket(command.getBytes(),command.getBytes().length,inetAddress,UDP_PORT);
+            clientDatagramSocket.send(sendPacket);
+            DatagramPacket receivePacket = new DatagramPacket(new byte[1024],new byte[1024].length);
+            clientDatagramSocket.receive(receivePacket);
+            serverResponse = new String(receivePacket.getData()).trim();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        serverResponse = serverResponse.replaceAll("^#+", "");
+        serverResponse = serverResponse.replaceAll("#+$", "");
+        return serverResponse.split("#");
 	}
 
 	

@@ -18,13 +18,12 @@ public class RiddleResponseGenerator {
     private JSONObject riddlesJson;
     private Random random;
 
-    public RiddleResponseGenerator(){
-        JSONParser jsonParser=new JSONParser();
+    public RiddleResponseGenerator() {
+        JSONParser jsonParser = new JSONParser();
         random = new Random();
         try {
-            System.out.println(System.getProperty("user.dir"));
-            Object object=jsonParser.parse(new FileReader("riddles.json"));
-            riddlesJson=(JSONObject)object;
+            Object object = jsonParser.parse(new FileReader("riddles.json"));
+            riddlesJson = (JSONObject) object;
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ParseException e) {
@@ -32,24 +31,30 @@ public class RiddleResponseGenerator {
         }
     }
 
-    public String generateRiddleResponse(String command){
+    public String generateRiddleResponse(String command) {
         String reply;
-        if(command.equals("hello") || command.equals("bye")){
+        if (command.equals("bye")) {
             reply = command;
-        }else{
-            if(command.equals("riddle")){
-                int randomInt = random.nextInt(9-1)+1;
-                reply=riddlesJson.get(Integer.toString(randomInt)).toString();
-            }else{
-                if(command.matches("^(riddle [1-9])$")){
-                    reply=riddlesJson.get(command.split(" ")[1]).toString();
-                }else{
-                    if(command.matches("^(riddle [1-9]) (.*)$")){
-                        String[] splittedCommand = command.split(" ");
-                        JSONObject riddleAnswer = (JSONObject)riddlesJson.get(splittedCommand[1]);
-                        reply = riddleAnswer.get("answer").toString().equals(splittedCommand[2])?"correct":"incorrect";
-                    }else{
-                        reply = "unknown message";
+        } else {
+            if (command.equals("hello")) {
+            reply = Integer.toString(riddlesJson.size());
+            } else {
+                if (command.equals("riddle")) {
+                    int randomInt = random.nextInt(9 - 1) + 1;
+                    JSONObject riddleAnswer = (JSONObject) riddlesJson.get(Integer.toString(randomInt));
+                    reply = riddleAnswer.get("riddle").toString();
+                } else {
+                    if (command.matches("^(riddle [1-9])$")) {
+                        JSONObject riddleAnswer = (JSONObject) riddlesJson.get(command.split(" ")[1]);
+                        reply = riddleAnswer.get("riddle").toString();
+                    } else {
+                        if (command.matches("^(riddle [1-9]) (.*)$")) {
+                            String[] splittedCommand = command.split(" ");
+                            JSONObject riddleAnswer = (JSONObject) riddlesJson.get(splittedCommand[1]);
+                            reply = riddleAnswer.get("answer").toString().equals(splittedCommand[2]) ? "correct" : "incorrect";
+                        } else {
+                            reply = "unknown message";
+                        }
                     }
                 }
             }
